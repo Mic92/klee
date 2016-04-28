@@ -47,6 +47,7 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 
 #if LLVM_VERSION_CODE < LLVM_VERSION(3, 0)
@@ -1278,8 +1279,11 @@ int main(int argc, char **argv, char **envp) {
     // from the std::unique_ptr
     Buffer->release();
   }
-
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 7)
+  mainModule = mainModuleOrError->release();
+#else
   mainModule = *mainModuleOrError;
+#endif
   if (auto ec = mainModule->materializeAllPermanently()) {
     klee_error("error loading program '%s': %s", InputFile.c_str(),
                ec.message().c_str());
