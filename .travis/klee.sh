@@ -7,6 +7,14 @@ set -e
 SVN_BRANCH="release_$( echo ${LLVM_VERSION} | sed 's/\.//g')"
 
 ###############################################################################
+# Select the LLVM configuration method
+###############################################################################
+KLEE_USE_CMAKE_LLVM=""
+if [ "${LLVM_VERSION}" == "3.9" ]; then
+    KLEE_USE_CMAKE_LLVM="-DUSE_CMAKE_FIND_PACKAGE_LLVM=ON"
+fi
+
+###############################################################################
 # Select the compiler to use to generate LLVM bitcode
 ###############################################################################
 if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
@@ -154,6 +162,7 @@ if [ "X${USE_CMAKE}" == "X1" ]; then
     ${KLEE_Z3_CONFIGURE_OPTION} \
     ${KLEE_METASMT_CONFIGURE_OPTION} \
     ${KLEE_UCLIBC_CONFIGURE_OPTION} \
+    ${KLEE_USE_CMAKE_LLVM} \
     ${TCMALLOC_OPTION} \
     -DGTEST_SRC_DIR=${GTEST_SRC_DIR} \
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
