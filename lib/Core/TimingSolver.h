@@ -26,6 +26,9 @@ namespace klee {
     Solver *solver;
     bool simplifyExprs;
 
+  private:
+    void updateTimes(const ExecutionState& state, uint64_t usec);
+
   public:
     /// TimingSolver - Construct a new timing solver.
     ///
