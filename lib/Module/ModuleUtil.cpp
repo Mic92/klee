@@ -19,7 +19,11 @@
 #endif
 
 #if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
+#if LLVM_VERSION_CODE >= LLVM_VERSION(4, 0)
+#include <llvm/Bitcode/BitcodeReader.h>
+#else
 #include "llvm/Bitcode/ReaderWriter.h"
+#endif
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
@@ -31,7 +35,9 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/IR/ValueSymbolTable.h"
 #include "llvm/Support/SourceMgr.h"
+#if LLVM_VERSION_CODE < LLVM_VERSION(4, 0)
 #include "llvm/Support/DataStream.h"
+#endif
 #else
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
