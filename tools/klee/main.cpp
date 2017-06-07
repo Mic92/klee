@@ -1278,15 +1278,23 @@ int main(int argc, char **argv, char **envp) {
     klee_error("error loading program '%s': %s", InputFile.c_str(),
                Buffer.getError().message().c_str());
 
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 6)
+  std::error_code ec;
+#if LLVM_VERSION_CODE >= LLVM_VERSION(4, 0)
+  Expected<std::unique_ptr<Module>> mainModuleOrError =
+    getOwningLazyBitcodeModule(std::move(Buffer.get()), ctx);
+  ec = mainModuleOrError ? std::error_code() :
+    errorToErrorCode(mainModuleOrError.takeError());
+#elif LLVM_VERSION_CODE >= LLVM_VERSION(3, 6)
   auto mainModuleOrError = getLazyBitcodeModule(std::move(Buffer.get()), ctx);
+  ec = mainModuleOrError.getError();
 #else
   auto mainModuleOrError = getLazyBitcodeModule(Buffer->get(), ctx);
+  ec = mainModuleOrError.getError();
 #endif
 
-  if (!mainModuleOrError) {
+  if (ec) {
     klee_error("error loading program '%s': %s", InputFile.c_str(),
-               mainModuleOrError.getError().message().c_str());
+               ec.message().c_str());
   }
   else {
     // The module has taken ownership of the MemoryBuffer so release it
@@ -1298,7 +1306,10 @@ int main(int argc, char **argv, char **envp) {
 #else
   mainModule = *mainModuleOrError;
 #endif
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 8)
+#if LLVM_VERSION_CODE >= LLVM_VERSION(4, 0)
+  if (llvm::Error err = mainModule->materializeAll()) {
+    std::error_code ec = errorToErrorCode(std::move(err));
+#elif LLVM_VERSION_CODE >= LLVM_VERSION(3, 8)
   if (auto ec = mainModule->materializeAll()) {
 #else
   if (auto ec = mainModule->materializeAllPermanently()) {
