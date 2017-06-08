@@ -13,16 +13,20 @@
 #include "klee/ExecutionState.h"
 #include "klee/Solver.h"
 #include "klee/Statistics.h"
-#include "klee/Internal/System/Time.h"
+#include "klee/Internal/Support/Timer.h"
 
 #include "CoreStats.h"
-
-#include "llvm/Support/TimeValue.h"
 
 using namespace klee;
 using namespace llvm;
 
 /***/
+
+void TimingSolver::updateTimes(const ExecutionState& state, uint64_t usec)
+{
+  stats::solverTime += usec;
+  state.queryCost += usec / 1e6;
+}
 
 bool TimingSolver::evaluate(const ExecutionState& state, ref<Expr> expr,
                             Solver::Validity &result) {
@@ -32,17 +36,14 @@ bool TimingSolver::evaluate(const ExecutionState& state, ref<Expr> expr,
     return true;
   }
 
-  sys::TimeValue now = util::getWallTimeVal();
+  WallTimer timer;
 
   if (simplifyExprs)
     expr = state.constraints.simplifyExpr(expr);
 
   bool success = solver->evaluate(Query(state.constraints, expr), result);
 
-  sys::TimeValue delta = util::getWallTimeVal();
-  delta -= now;
-  stats::solverTime += delta.usec();
-  state.queryCost += delta.usec()/1000000.;
+  updateTimes(state, timer.check());
 
   return success;
 }
@@ -55,17 +56,14 @@ bool TimingSolver::mustBeTrue(const ExecutionState& state, ref<Expr> expr,
     return true;
   }
 
-  sys::TimeValue now = util::getWallTimeVal();
+  WallTimer timer;
 
   if (simplifyExprs)
     expr = state.constraints.simplifyExpr(expr);
 
   bool success = solver->mustBeTrue(Query(state.constraints, expr), result);
 
-  sys::TimeValue delta = util::getWallTimeVal();
-  delta -= now;
-  stats::solverTime += delta.usec();
-  state.queryCost += delta.usec()/1000000.;
+  updateTimes(state, timer.check());
 
   return success;
 }
@@ -101,17 +99,14 @@ bool TimingSolver::getValue(const ExecutionState& state, ref<Expr> expr,
     return true;
   }
   
-  sys::TimeValue now = util::getWallTimeVal();
+  WallTimer timer;
 
   if (simplifyExprs)
     expr = state.constraints.simplifyExpr(expr);
 
   bool success = solver->getValue(Query(state.constraints, expr), result);
 
-  sys::TimeValue delta = util::getWallTimeVal();
-  delta -= now;
-  stats::solverTime += delta.usec();
-  state.queryCost += delta.usec()/1000000.;
+  updateTimes(state, timer.check());
 
   return success;
 }
@@ -125,16 +120,13 @@ TimingSolver::getInitialValues(const ExecutionState& state,
   if (objects.empty())
     return true;
 
-  sys::TimeValue now = util::getWallTimeVal();
+  WallTimer timer;
 
   bool success = solver->getInitialValues(Query(state.constraints,
                                                 ConstantExpr::alloc(0, Expr::Bool)), 
                                           objects, result);
   
-  sys::TimeValue delta = util::getWallTimeVal();
-  delta -= now;
-  stats::solverTime += delta.usec();
-  state.queryCost += delta.usec()/1000000.;
+  updateTimes(state, timer.check());
   
   return success;
 }
