@@ -90,8 +90,7 @@ namespace klee {
           addend = ConstantExpr::alloc(sl->getElementOffset((unsigned)
                                                             ci->getZExtValue()),
                                        Context::get().getPointerWidth());
-        } else {
-          const SequentialType *set = cast<SequentialType>(*ii);
+        } else if (const SequentialType *set = dyn_cast<SequentialType>(*ii)) {
           ref<ConstantExpr> index = 
             evalConstant(cast<Constant>(ii.getOperand()));
           unsigned elementSize = 
@@ -100,7 +99,19 @@ namespace klee {
           index = index->ZExt(Context::get().getPointerWidth());
           addend = index->Mul(ConstantExpr::alloc(elementSize, 
                                                   Context::get().getPointerWidth()));
-        }
+#if LLVM_VERSION_CODE >= LLVM_VERSION(4, 0)
+        } else if (const PointerType *ptr = dyn_cast<PointerType>(*ii)) {
+          ref<ConstantExpr> index =
+            evalConstant(cast<Constant>(ii.getOperand()));
+          unsigned elementSize =
+            kmodule->targetData->getTypeStoreSize(ptr->getElementType());
+
+          index = index->ZExt(Context::get().getPointerWidth());
+          addend = index->Mul(ConstantExpr::alloc(elementSize,
+                                                  Context::get().getPointerWidth()));
+#endif
+        } else
+	  assert("invalid type" && 0);
 
         base = base->Add(addend);
       }
