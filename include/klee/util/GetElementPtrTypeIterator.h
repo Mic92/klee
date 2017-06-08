@@ -93,6 +93,11 @@ namespace klee {
       if (LLVM_TYPE_Q llvm::CompositeType *CT =
             dyn_cast<llvm::CompositeType>(CurTy)) {
         CurTy = CT->getTypeAtIndex(getOperand());
+#if LLVM_VERSION_CODE >= LLVM_VERSION(4, 0)
+      } else if (LLVM_TYPE_Q llvm::PointerType *ptr =
+            dyn_cast<llvm::PointerType>(CurTy)) {
+        CurTy = ptr->getElementType();
+#endif
       } else {
         CurTy = 0;
       }
