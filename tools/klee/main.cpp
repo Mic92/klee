@@ -23,6 +23,7 @@
 #include "klee/Interpreter.h"
 #include "klee/Loader.h"
 #include "klee/Statistics.h"
+#include "klee/SolverStats.h"
 
 #if LLVM_VERSION_CODE > LLVM_VERSION(3, 2)
 #include "llvm/IR/Constants.h"
@@ -255,6 +256,8 @@ public:
                        const char *errorMessage,
                        const char *errorSuffix);
 
+  void logTestCaseResources(unsigned id, const char* errorMessage, unsigned constraintSize);
+
   std::string getOutputFilename(const std::string &filename);
   llvm::raw_fd_ostream *openOutputFile(const std::string &filename);
   std::string getTestFilename(const std::string &suffix, unsigned id);
@@ -410,6 +413,72 @@ llvm::raw_fd_ostream *KleeHandler::openTestFile(const std::string &suffix,
   return openOutputFile(getTestFilename(suffix, id));
 }
 
+std::string escapeJsonString(const std::string& input) {
+   std::ostringstream ss;
+   for (std::string::const_iterator it = input.begin(); it != input.end(); it++) {
+      switch (*it) {
+         case '\\': ss << "\\\\"; break;
+         case '"': ss << "\\\""; break;
+         case '/': ss << "\\/"; break;
+         case '\b': ss << "\\b"; break;
+         case '\f': ss << "\\f"; break;
+         case '\n': ss << "\\n"; break;
+         case '\r': ss << "\\r"; break;
+         case '\t': ss << "\\t"; break;
+         default: ss << *it; break;
+      }
+   }
+   return ss.str();
+}
+
+void KleeHandler::logTestCaseResources(unsigned id, const char *errorMessage, unsigned constraintSize) {
+  struct rusage usage;
+  int rc = util::GetResourceUsage(usage);
+  if (rc != 0) {
+    klee_warning("getrusage() failed with: %s", strerror(errno));
+  } else {
+    sys::TimeValue now = sys::TimeValue::now();
+    std::string escapedMessage = escapeJsonString(errorMessage ? errorMessage : "");
+    m_statsFile
+      << "{"
+      << "\"testcase\":\"" << getTestFilename("ktest", id) << "\","
+      << "\"elapsed_time\":" << (util::getWallTime() - m_startTime) << ","
+      << "\"is_error_case\":" << ((errorMessage != NULL) ? "true" : "false") << ","
+      << "\"error_message\":\"" << escapedMessage << "\","
+      << "\"wall_time_seconds\":" << now.seconds() << ","
+      << "\"wall_time_nanoseconds\":" << now.nanoseconds() << ","
+      << "\"utime_seconds\":" << usage.ru_utime.tv_sec << ","
+      << "\"utime_microseconds\":" << usage.ru_utime.tv_usec << ","
+      << "\"stime_seconds\":" << usage.ru_stime.tv_sec << ","
+      << "\"stime_microseconds\":" << usage.ru_stime.tv_usec << ","
+      << "\"maxrss\":" << usage.ru_maxrss << ","
+      << "\"minflt\":" << usage.ru_minflt << ","
+      << "\"majflt\":" << usage.ru_majflt << ","
+      << "\"inblock\":" << usage.ru_inblock << ","
+      << "\"oublock\":" << usage.ru_oublock << ","
+      << "\"nvcsw\":" << usage.ru_nvcsw << ","
+      << "\"nivcsw\":" << usage.ru_nivcsw << ","
+      << "\"allocations\":" << stats::allocations << ","
+      << "\"covered_instructions\":" << stats::coveredInstructions << ","
+      << "\"false_branches\":" << stats::falseBranches << ","
+      << "\"fork_time\":" << stats::forkTime << ","
+      << "\"forks\":" << stats::forks << ","
+      << "\"instruction_real_times\":" << stats::instructionRealTime << ","
+      << "\"Instruction_times\":" << stats::instructionTime << ","
+      << "\"instructions\":" << stats::instructions << ","
+      << "\"min_dist_to_return\":" << stats::minDistToReturn << ","
+      << "\"min_dist_to_uncovered\":" << stats::minDistToUncovered << ","
+      << "\"reachable_uncovered\":" << stats::reachableUncovered << ","
+      << "\"resolve_time\":" << stats::resolveTime << ","
+      << "\"solver_time\":" << stats::solverTime << ","
+      << "\"states\":" << stats::states << ","
+      << "\"true_branches\":" << stats::trueBranches << ","
+      << "\"uncovered_instructions\":" << stats::uncoveredInstructions << ","
+      << "\"constraint_size\":" << constraintSize
+      << "}\n";
+    m_statsFile.flush();
+  }
+}
 
 /* Outputs all files (.ktest, .kquery, .cov etc.) describing a test case */
 void KleeHandler::processTestCase(const ExecutionState &state,
@@ -440,6 +509,9 @@ void KleeHandler::processTestCase(const ExecutionState &state,
       b.numObjects = out.size();
       b.objects = new KTestObject[b.numObjects];
       assert(b.objects);
+
+      logTestCaseResources(id, errorMessage, state.constraints.size());
+
       for (unsigned i=0; i<b.numObjects; i++) {
         KTestObject *o = &b.objects[i];
         o->name = const_cast<char*>(out[i].first.c_str());
