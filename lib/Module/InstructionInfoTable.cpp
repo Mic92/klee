@@ -9,6 +9,7 @@
 
 #include "klee/Internal/Module/InstructionInfoTable.h"
 #include "klee/Config/Version.h"
+#include <klee/Internal/Support/FileHandling.h>
 
 #if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
 #include "llvm/IR/Function.h"
@@ -48,6 +49,9 @@
 
 #include <map>
 #include <string>
+#include <unistd.h>
+#include <fcntl.h>
+#include <fstream>
 
 using namespace llvm;
 using namespace klee;
@@ -122,9 +126,18 @@ InstructionInfoTable::InstructionInfoTable(Module *m)
   : dummyString(""), dummyInfo(0, dummyString, 0, 0) {
   unsigned id = 0;
   std::map<const Instruction*, unsigned> lineTable;
+  typedef std::map<const std::string*, std::vector<std::string>> sourceFileMap;
+  sourceFileMap sourceFiles;
   buildInstructionToLineMap(m, lineTable);
 
-  for (Module::iterator fnIt = m->begin(), fn_ie = m->end(); 
+  std::string path = "/tmp/instructions";
+  std::string error = "";
+  llvm::raw_fd_ostream *stream = klee_open_output_file(path, error);
+
+  const std::string *previousFile = NULL;
+  unsigned previousLine = 0;
+
+  for (Module::iterator fnIt = m->begin(), fn_ie = m->end();
        fnIt != fn_ie; ++fnIt) {
     Function *fn = &*fnIt;
 
@@ -150,9 +163,34 @@ InstructionInfoTable::InstructionInfoTable(Module *m)
       // Update our source level debug information.
       getInstructionDebugInfo(instr, file, line);
 
+      sourceFileMap::iterator linesIt = sourceFiles.find(file);
+
+      if (linesIt != sourceFiles.end() && file) {
+        std::string error, line;
+        std::fstream sourceFileStream(file->c_str(), std::fstream::in);
+        sourceFiles[file] = std::vector<std::string>();
+        if (sourceFileStream.is_open()) {
+          while (std::getline(sourceFileStream, line)) {
+            sourceFiles[file].push_back(line);
+          }
+        }
+      }
+
+      if (stream) {
+        bool newLocation = (previousFile == NULL) || (file != previousFile) || (line != previousLine);
+        if (newLocation) {
+          *stream << "\n; " << file->c_str() << ":" << line;
+        }
+
+        instr->print(*stream);
+        *stream << "  ; " << assemblyLine << "\n";
+      }
+
       infos.insert(std::make_pair(instr,
                                   InstructionInfo(id++, *file, line,
                                                   assemblyLine)));
+      previousFile = file;
+      previousLine = line;
     }
   }
 }
