@@ -12,7 +12,7 @@
 #include <string>
 
 namespace klee {
-llvm::raw_fd_ostream *klee_open_output_file(std::string &path,
+llvm::raw_fd_ostream *klee_open_output_file(const std::string &path,
                                             std::string &error);
 }
 

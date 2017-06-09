@@ -17,7 +17,7 @@
 
 namespace klee {
 
-llvm::raw_fd_ostream *klee_open_output_file(std::string &path,
+llvm::raw_fd_ostream *klee_open_output_file(const std::string &path,
                                             std::string &error) {
   llvm::raw_fd_ostream *f;
 #if LLVM_VERSION_CODE >= LLVM_VERSION(3, 6)
