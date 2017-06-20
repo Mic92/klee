@@ -10,7 +10,7 @@ SVN_BRANCH="release_$( echo ${LLVM_VERSION} | sed 's/\.//g')"
 # Select the LLVM configuration method
 ###############################################################################
 KLEE_USE_CMAKE_LLVM=""
-if [ "${LLVM_VERSION}" == "3.9" ]; then
+if [ "${LLVM_VERSION}" == "3.9" -o "${LLVM_VERSION}" == "4.0" ]; then
     KLEE_USE_CMAKE_LLVM="-DUSE_CMAKE_FIND_PACKAGE_LLVM=ON"
 fi
 
