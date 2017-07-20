@@ -20,6 +20,13 @@ if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") OR ("${CMAKE_CXX_COMPILER_ID}" 
   set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT "-Os")
   set(CMAKE_CXX_FLAGS_RELEASE_INIT "-O3")
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
+
+  if (CMAKE_VERSION VERSION_LESS "3.1")
+    set (CMAKE_CXX_FLAGS "--std=c++11 ${CMAKE_CXX_FLAGS}")
+  else ()
+    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  endif ()
 else()
   message(FATAL_ERROR "Overrides not set for compiler ${CMAKE_CXX_COMPILER_ID}")
 endif()
