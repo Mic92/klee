@@ -16,6 +16,7 @@
 
 // FIXME: We do not want to be exposing these? :(
 #include "../../lib/Core/AddressSpace.h"
+#include "klee/Internal/Module/BranchSample.h"
 #include "klee/Internal/Module/KInstIterator.h"
 
 #include <map>
@@ -109,6 +110,9 @@ public:
   /// @brief Exploration depth, i.e., number of times KLEE branched for this state
   unsigned depth;
 
+  /// @brief Number of taken branches matching our recorded branch samples
+  unsigned executedBranchesFromTrace;
+
   /// @brief History of complete path: represents branches taken to
   /// reach/create this state (both concrete and symbolic)
   TreeOStream pathOS;
@@ -159,7 +163,7 @@ public:
 
   ~ExecutionState();
 
-  ExecutionState *branch();
+  ExecutionState *branch(const std::vector<BranchSample> *branchSamples);
 
   void pushFrame(KInstIterator caller, KFunction *kf);
   void popFrame();

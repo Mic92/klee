@@ -71,6 +71,7 @@ namespace klee {
       BFS,
       RandomState,
       RandomPath,
+      FitBranchSamples,
       NURS_CovNew,
       NURS_MD2U,
       NURS_Depth,
@@ -130,7 +131,8 @@ namespace klee {
       InstCount,
       CPInstCount,
       MinDistToUncovered,
-      CoveringNew
+      CoveringNew,
+      FitBranchSamples
     };
 
   private:

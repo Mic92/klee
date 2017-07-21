@@ -120,6 +120,9 @@ namespace {
   WriteSymPaths("write-sym-paths",
                 cl::desc("Write .sym.path files for each test case"));
 
+  cl::opt<std::string>
+  BranchSamplesPath("branch-samples-path", cl::desc("Use branch samples (from LBR/PT) to guide symbolic execution, see also --search=fit-branch-samples"));
+
   cl::opt<bool>
   OptExitOnError("exit-on-error",
               cl::desc("Exit if errors occur"));
@@ -1337,6 +1340,14 @@ int main(int argc, char **argv, char **envp) {
 
   if (ReplayPathFile != "") {
     interpreter->setReplayPath(&replayPath);
+  }
+
+  if (!BranchSamplesPath.empty()) {
+    std::vector<BranchSample> *samples = BranchSample::readFromFile(BranchSamplesPath, &errorMsg);
+    if (!samples) {
+      klee_error("Failed to read branch samples '%s': %s", BranchSamplesPath.c_str(), errorMsg.c_str());
+    }
+    interpreter->setBranchSamples(samples);
   }
 
   char buf[256];

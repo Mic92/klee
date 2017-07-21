@@ -9,6 +9,8 @@
 #ifndef KLEE_INTERPRETER_H
 #define KLEE_INTERPRETER_H
 
+#include "klee/Internal/Module/BranchSample.h"
+
 #include <vector>
 #include <string>
 #include <map>
@@ -113,6 +115,8 @@ public:
   // supply a tree stream writer which the interpreter will use
   // to record the symbolic path (as a stream of '0' and '1' bytes).
   virtual void setSymbolicPathWriter(TreeStreamWriter *tsw) = 0;
+
+  virtual void setBranchSamples(const std::vector<BranchSample> *branchSamples) = 0;
 
   // supply a test case to replay from. this can be used to drive the
   // interpretation down a user specified path. use null to reset.

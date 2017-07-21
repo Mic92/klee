@@ -25,6 +25,7 @@ namespace {
 			clEnumValN(Searcher::BFS, "bfs", "use Breadth First Search (BFS), where scheduling decisions are taken at the level of (2-way) forks"),
 			clEnumValN(Searcher::RandomState, "random-state", "randomly select a state to explore"),
 			clEnumValN(Searcher::RandomPath, "random-path", "use Random Path Selection (see OSDI'08 paper)"),
+			clEnumValN(Searcher::FitBranchSamples, "fit-branch-samples", "fit branch trace samples"),
 			clEnumValN(Searcher::NURS_CovNew, "nurs:covnew", "use Non Uniform Random Search (NURS) with Coverage-New"),
 			clEnumValN(Searcher::NURS_MD2U, "nurs:md2u", "use NURS with Min-Dist-to-Uncovered"),
 			clEnumValN(Searcher::NURS_Depth, "nurs:depth", "use NURS with 2^depth"),
@@ -34,11 +35,11 @@ namespace {
 			KLEE_LLVM_CL_VAL_END));
 
   cl::opt<bool>
-  UseIterativeDeepeningTimeSearch("use-iterative-deepening-time-search", 
+  UseIterativeDeepeningTimeSearch("use-iterative-deepening-time-search",
                                     cl::desc("(experimental)"));
 
   cl::opt<bool>
-  UseBatchingSearch("use-batching-search", 
+  UseBatchingSearch("use-batching-search",
 		    cl::desc("Use batching searcher (keep running selected state for N instructions/time, see --batch-instructions and --batch-time)"),
 		    cl::init(false));
 
@@ -46,7 +47,7 @@ namespace {
   BatchInstructions("batch-instructions",
                     cl::desc("Number of instructions to batch when using --use-batching-search"),
                     cl::init(10000));
-  
+
   cl::opt<double>
   BatchTime("batch-time",
             cl::desc("Amount of time to batch when using --use-batching-search"),
@@ -54,11 +55,11 @@ namespace {
 
 
   cl::opt<bool>
-  UseMerge("use-merge", 
+  UseMerge("use-merge",
            cl::desc("Enable support for klee_merge() (experimental)"));
- 
+
   cl::opt<bool>
-  UseBumpMerge("use-bump-merge", 
+  UseBumpMerge("use-bump-merge",
            cl::desc("Enable support for klee_merge() (extra experimental)"));
 
 }
@@ -80,6 +81,7 @@ Searcher *getNewSearcher(Searcher::CoreSearchType type, Executor &executor) {
   case Searcher::BFS: searcher = new BFSSearcher(); break;
   case Searcher::RandomState: searcher = new RandomSearcher(); break;
   case Searcher::RandomPath: searcher = new RandomPathSearcher(executor); break;
+  case Searcher::FitBranchSamples: searcher = new WeightedRandomSearcher(WeightedRandomSearcher::FitBranchSamples); break;
   case Searcher::NURS_CovNew: searcher = new WeightedRandomSearcher(WeightedRandomSearcher::CoveringNew); break;
   case Searcher::NURS_MD2U: searcher = new WeightedRandomSearcher(WeightedRandomSearcher::MinDistToUncovered); break;
   case Searcher::NURS_Depth: searcher = new WeightedRandomSearcher(WeightedRandomSearcher::Depth); break;
@@ -100,14 +102,14 @@ Searcher *klee::constructUserSearcher(Executor &executor) {
   }
 
   Searcher *searcher = getNewSearcher(CoreSearch[0], executor);
-  
+
   if (CoreSearch.size() > 1) {
     std::vector<Searcher *> s;
     s.push_back(searcher);
 
     for (unsigned i=1; i<CoreSearch.size(); i++)
       s.push_back(getNewSearcher(CoreSearch[i], executor));
-    
+
     searcher = new InterleavedSearcher(s);
   }
 
@@ -127,7 +129,7 @@ Searcher *klee::constructUserSearcher(Executor &executor) {
   } else if (UseBumpMerge) {
     searcher = new BumpMergingSearcher(executor, searcher);
   }
-  
+
   if (UseIterativeDeepeningTimeSearch) {
     searcher = new IterativeDeepeningTimeSearcher(searcher);
   }

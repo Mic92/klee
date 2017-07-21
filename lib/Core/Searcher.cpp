@@ -178,6 +178,7 @@ WeightedRandomSearcher::WeightedRandomSearcher(WeightType _type)
   case InstCount:
   case CPInstCount:
   case QueryCost:
+  case FitBranchSamples:
   case MinDistToUncovered:
   case CoveringNew:
     updateWeights = true;
@@ -214,6 +215,8 @@ double WeightedRandomSearcher::getWeight(ExecutionState *es) {
   }
   case QueryCost:
     return (es->queryCost < .1) ? 1. : 1./es->queryCost;
+  case FitBranchSamples:
+    return es->executedBranchesFromTrace;
   case CoveringNew:
   case MinDistToUncovered: {
     uint64_t md2u = computeMinDistToUncovered(es->pc,
