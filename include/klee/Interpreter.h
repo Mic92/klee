@@ -112,6 +112,8 @@ public:
   // to record the concrete path (as a stream of '0' and '1' bytes).
   virtual void setPathWriter(TreeStreamWriter *tsw) = 0;
 
+  virtual void setBranchSampleWriter(TreeStreamWriter *tsw) = 0;
+
   // supply a tree stream writer which the interpreter will use
   // to record the symbolic path (as a stream of '0' and '1' bytes).
   virtual void setSymbolicPathWriter(TreeStreamWriter *tsw) = 0;

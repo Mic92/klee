@@ -128,7 +128,7 @@ private:
   MemoryManager *memory;
   std::set<ExecutionState*> states;
   StatsTracker *statsTracker;
-  TreeStreamWriter *pathWriter, *symPathWriter;
+  TreeStreamWriter *pathWriter, *branchSampleWriter, *symPathWriter;
   SpecialFunctionHandler *specialFunctionHandler;
   std::vector<TimerInfo*> timers;
   PTree *processTree;
@@ -454,6 +454,9 @@ public:
 
   virtual void setPathWriter(TreeStreamWriter *tsw) {
     pathWriter = tsw;
+  }
+  virtual void setBranchSampleWriter(TreeStreamWriter *tsw) {
+    branchSampleWriter = tsw;
   }
   virtual void setSymbolicPathWriter(TreeStreamWriter *tsw) {
     symPathWriter = tsw;

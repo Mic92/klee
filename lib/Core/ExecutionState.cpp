@@ -112,6 +112,7 @@ ExecutionState::ExecutionState(const ExecutionState& state):
 
     pathOS(state.pathOS),
     symPathOS(state.symPathOS),
+    branchSamplesOS(state.branchSamplesOS),
 
     instsSinceCovNew(state.instsSinceCovNew),
     coveredNew(state.coveredNew),

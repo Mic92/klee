@@ -10,6 +10,9 @@
 #ifndef __UTIL_TREESTREAM_H__
 #define __UTIL_TREESTREAM_H__
 
+#include "klee/Internal/Module/KInstIterator.h"
+#include "klee/Internal/Module/KInstruction.h"
+
 #include <string>
 #include <vector>
 
@@ -66,6 +69,8 @@ namespace klee {
     unsigned getID() const;
 
     void write(const char *buffer, unsigned size);
+
+    void writeBranchSample(const KInstIterator &from, const KInstIterator &to);
 
     TreeOStream &operator<<(const std::string &s);
 

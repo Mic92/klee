@@ -9,7 +9,6 @@
 
 #define DEBUG_TYPE "TreeStreamWriter"
 #include "klee/Internal/ADT/TreeStream.h"
-
 #include "klee/Internal/Support/Debug.h"
 
 #include <cassert>
@@ -184,6 +183,13 @@ unsigned TreeOStream::getID() const {
 void TreeOStream::write(const char *buffer, unsigned size) {
   assert(writer);
   writer->write(*this, buffer, size);
+}
+
+void TreeOStream::writeBranchSample(const KInstIterator &from, const KInstIterator &to) {
+  *this << std::to_string(((KInstruction*) from)->info->id)
+        << " "
+        << std::to_string(((KInstruction*) to)->info->id)
+        << "/n";
 }
 
 TreeOStream &TreeOStream::operator<<(const std::string &s) {

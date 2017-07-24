@@ -223,7 +223,7 @@ extern cl::opt<double> MaxTime;
 class KleeHandler : public InterpreterHandler {
 private:
   Interpreter *m_interpreter;
-  TreeStreamWriter *m_pathWriter, *m_symPathWriter;
+  TreeStreamWriter *m_pathWriter, *m_symPathWriter, *m_branchSampleWriter;
   llvm::raw_ostream *m_infoFile;
 
   SmallString<128> m_outputDirectory;
@@ -365,6 +365,10 @@ void KleeHandler::setInterpreter(Interpreter *i) {
     assert(m_pathWriter->good());
     m_interpreter->setPathWriter(m_pathWriter);
   }
+
+  m_branchSampleWriter = new TreeStreamWriter(getOutputFilename("branchSamples"));
+  assert(m_branchSampleWriter->good());
+  m_interpreter->setBranchSampleWriter(m_branchSampleWriter);
 
   if (WriteSymPaths) {
     m_symPathWriter = new TreeStreamWriter(getOutputFilename("symPaths.ts"));
